@@ -1,0 +1,52 @@
+{
+    "name": "3neti/emi-paynamics",
+    "description": "Paynamics Constellation adapter for EMI core",
+    "type": "library",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Lester Hurtado",
+            "email": "lester@hurtado.ph"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "LBHurtado\\EmiPaynamicsConstellation\\": "src/",
+            "LBHurtado\\EmiPaynamicsConstellation\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LBHurtado\\EmiPaynamicsConstellation\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LBHurtado\\EmiPaynamicsConstellation\\ConstellationServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "3neti/emi-core": "^v1.0.1",
+        "illuminate/support": "^12.0 || ^13.0",
+        "illuminate/http": "^12.0 || ^13.0",
+        "lorisleiva/laravel-actions": "^2.9",
+        "spatie/laravel-data": "^4.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "pestphp/pest": "^4.0"
+    },
+    "scripts": {
+        "test": "vendor/bin/pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
