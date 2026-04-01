@@ -43,4 +43,14 @@ return [
         'success_url' => env('CONSTELLATION_SUCCESS_URL', ''),
         'failed_url' => env('CONSTELLATION_FAILED_URL', ''),
     ],
+
+    'rail_fees' => [
+        'INSTAPAY' => env('CONSTELLATION_INSTAPAY_FEE', 0),
+        'PESONET' => env('CONSTELLATION_PESONET_FEE', 0),
+    ],
+
+    'bank_map' => [
+        // 'UBP' => 'bank-123',
+        // 'BDO' => 'bank-456',
+    ],
 ];
