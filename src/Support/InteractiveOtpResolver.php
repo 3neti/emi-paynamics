@@ -43,14 +43,6 @@ class InteractiveOtpResolver implements ConstellationOtpResolver
             return ($this->inputCallback)($otpRequestPayload, $result);
         }
 
-        // Guard: refuse to prompt when STDIN is not interactive (e.g. --json mode, piped input)
-        if (! $this->isInteractive()) {
-            throw new RuntimeException(
-                'Paynamics OTP requires interactive input but STDIN is not a terminal. '
-                .'Remove --json or use a non-interactive OTP resolver (e.g. CONSTELLATION_OTP_RESOLVER=null).'
-            );
-        }
-
         // Default: read from STDIN for CLI/lifecycle use
         $phone = $result['data'] ?? 'wallet holder';
         fwrite(STDERR, "\n[Paynamics OTP] {$phone}\n");
@@ -63,14 +55,5 @@ class InteractiveOtpResolver implements ConstellationOtpResolver
         }
 
         return trim($input);
-    }
-
-    protected function isInteractive(): bool
-    {
-        if (! defined('STDIN')) {
-            return false;
-        }
-
-        return stream_isatty(STDIN);
     }
 }
