@@ -163,7 +163,11 @@ class ConstellationPayoutProvider implements PayoutProvider
                 );
             }
 
-            $transactionStatus = data_get($transaction, 'data.0.status')
+            // Paynamics transaction response uses 'status' for GR codes
+            // and 'external_status' for human-readable states like PRE-DEBIT, SETTLED
+            $transactionStatus = data_get($transaction, 'data.0.external_status')
+                ?? data_get($transaction, 'data.external_status')
+                ?? data_get($transaction, 'data.0.status')
                 ?? data_get($transaction, 'data.status')
                 ?? data_get($transaction, 'status');
 
@@ -338,12 +342,19 @@ class ConstellationPayoutProvider implements PayoutProvider
         $normalized = strtoupper(str_replace([' ', '-', '_'], '', $status));
 
         return match ($normalized) {
-            'PENDING' => PayoutStatus::PENDING,
+            'PENDING', 'PREDEBIT', 'WITHHELD' => PayoutStatus::PENDING,
             'PROCESSING', 'INPROCESS', 'FORSETTLEMENT' => PayoutStatus::PROCESSING,
             'SETTLED', 'SUCCESS', 'COMPLETED' => PayoutStatus::COMPLETED,
             'FAILED', 'ERROR', 'REJECTED' => PayoutStatus::FAILED,
             'CANCELLED', 'CANCELED' => PayoutStatus::CANCELLED,
             'REFUNDED' => PayoutStatus::REFUNDED,
+
+            // Paynamics response codes
+            'GR001' => PayoutStatus::COMPLETED,
+            'GR162' => PayoutStatus::PENDING,
+            'GR163' => PayoutStatus::COMPLETED,
+            'GR164' => PayoutStatus::FAILED,
+
             default => PayoutStatus::fromGeneric($status),
         };
     }
