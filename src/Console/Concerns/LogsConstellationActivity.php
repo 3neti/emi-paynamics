@@ -48,7 +48,7 @@ trait LogsConstellationActivity
     {
         $duration = round((microtime(true) - $this->startTime) * 1000);
 
-        Log::channel($this->logChannel())->error('constellation.command.error', [
+        $payload = [
             'command' => $this->getName(),
             'is_fake' => $this->option('fake') ?? false,
             'input' => $this->sanitizeInput($context),
@@ -56,7 +56,13 @@ trait LogsConstellationActivity
             'exception' => get_class($e),
             'duration_ms' => $duration,
             'timestamp' => now()->toIso8601String(),
-        ]);
+        ];
+
+        if (method_exists($e, 'context')) {
+            $payload['exception_context'] = $e->context();
+        }
+
+        Log::channel($this->logChannel())->error('constellation.command.error', $payload);
     }
 
     /**

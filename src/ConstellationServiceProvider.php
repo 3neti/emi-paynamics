@@ -3,13 +3,17 @@
 namespace LBHurtado\EmiPaynamicsConstellation;
 
 use Illuminate\Support\ServiceProvider;
+use InvalidArgumentException;
 use LBHurtado\EmiCore\Contracts\SignsProviderPayloads;
 use LBHurtado\EmiCore\Contracts\SystemReadiness;
 use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
 use LBHurtado\EmiPaynamicsConstellation\Console\Commands as Cmd;
+use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSystemReadiness;
+use LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver;
 
 class ConstellationServiceProvider extends ServiceProvider
 {
@@ -23,6 +27,23 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->bind(SignsProviderPayloads::class, ConstellationSigner::class);
         $this->app->bind(VerifiesProviderPostbacks::class, ConstellationSignatureVerifier::class);
         $this->app->bind(SystemReadiness::class, ConstellationSystemReadiness::class);
+
+        $this->app->bind(ConstellationOtpResolver::class, function ($app) {
+            $driver = config('constellation.otp.resolver', 'interactive');
+
+            $resolvers = config('constellation.otp.resolvers', [
+                'interactive' => InteractiveOtpResolver::class,
+                'null' => NullOtpResolver::class,
+            ]);
+
+            $class = $resolvers[$driver] ?? null;
+
+            if (! $class || ! class_exists($class)) {
+                throw new InvalidArgumentException("Unsupported Constellation OTP resolver: [{$driver}].");
+            }
+
+            return $app->make($class);
+        });
     }
 
     public function boot(): void

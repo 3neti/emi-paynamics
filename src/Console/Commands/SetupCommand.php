@@ -33,7 +33,7 @@ class SetupCommand extends Command
             return $this->runVerification($readiness);
         }
 
-        $context = ['action' => 'setup'];
+        $context = ['action' => 'setup', 'step' => 'api-probe'];
         $this->logBefore($context);
 
         // Step 1: Probe credentials
@@ -157,7 +157,7 @@ class SetupCommand extends Command
 
                 // Persist to audit log
                 $this->logAfter(
-                    ['action' => "create-{$externalUid}", 'email' => $email],
+                    ['action' => "create-{$externalUid}", 'step' => "create-{$label}-wallet",'email' => $email],
                     ['wallet_id' => $walletId, 'account_id' => $accountId, 'capture_link' => $captureLink],
                 );
 
@@ -166,12 +166,15 @@ class SetupCommand extends Command
 
             $msg = $result['data']['response_message'] ?? 'Unknown error';
             $this->components->error("{$label} wallet creation failed: {$msg}");
-            $this->logError(['action' => "create-{$externalUid}"], new \RuntimeException($msg));
 
             return null;
         } catch (\Throwable $e) {
             $this->components->error("{$label} wallet creation failed: {$e->getMessage()}");
-            $this->logError(['action' => "create-{$externalUid}"], $e);
+            $this->logError([
+                'action' => "create-{$externalUid}",
+                'step' => "create-{$label}-wallet",
+                'email' => $email,
+            ], $e);
 
             return null;
         }

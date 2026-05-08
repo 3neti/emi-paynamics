@@ -5,11 +5,14 @@ namespace LBHurtado\EmiPaynamicsConstellation\Adapters;
 use LBHurtado\EmiPaynamicsConstellation\Actions\CashOut\{CreateCashOutNonRegistered, GetCashOutByRequestId};
 use LBHurtado\EmiPaynamicsConstellation\Actions\Transactions\GetTransactionByRequestId;
 use LBHurtado\EmiPaynamicsConstellation\Actions\Wallets\GetWalletDetails;
+use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
 use LBHurtado\EmiCore\Data\{PayoutRequestData, PayoutResultData};
 use LBHurtado\EmiCore\Enums\{PayoutStatus, SettlementRail};
 use LBHurtado\EmiCore\Contracts\PayoutProvider;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\{Arr, Str};
 use RuntimeException;
+use stdClass;
 use Throwable;
 
 class ConstellationPayoutProvider implements PayoutProvider
@@ -19,6 +22,7 @@ class ConstellationPayoutProvider implements PayoutProvider
         protected GetCashOutByRequestId $getCashOutByRequestId,
         protected GetTransactionByRequestId $getTransactionByRequestId,
         protected GetWalletDetails $getWalletDetails,
+        protected ConstellationOtpResolver $otpResolver,
     ) {}
 
     public function disburse(PayoutRequestData $request): PayoutResultData
@@ -26,17 +30,45 @@ class ConstellationPayoutProvider implements PayoutProvider
         $walletId = $this->getSettlementWalletId();
         $accountId = $this->resolveSettlementAccountId($walletId);
 
+        $bankId = $this->resolveBankId($request->bank_code);
+        $accountNo = preg_replace('/\D+/', '', $request->account_number);
+        $amount = $this->normalizeAmount($request->amount);
+        $reason = $this->resolveReason($request);
+
+        // Step 1: Request and resolve OTP
+        Log::channel(config('constellation.log_channel', 'constellation'))->info(
+            '[ConstellationPayoutProvider] requesting OTP',
+            ['request_id' => $request->reference, 'time' => now()->toIso8601String()]
+        );
+
+        $otp = $this->otpResolver->resolve([
+            'account_id' => $accountId,
+            'bank_account_no' => $accountNo,
+            'bank_id' => $bankId,
+            'request_id' => $request->reference,
+            'reason' => $reason,
+            'amount' => $amount,
+        ]);
+
+        Log::channel(config('constellation.log_channel', 'constellation'))->info(
+            '[ConstellationPayoutProvider] OTP received, submitting cash-out',
+            ['request_id' => $request->reference, 'time' => now()->toIso8601String()]
+        );
+
+        // Step 2: Submit cash-out with OTP
         $payload = [
             'account_id' => $accountId,
-            'amount' => $this->normalizeAmount($request->amount),
+            'amount' => $amount,
             'request_id' => $request->reference,
-            'account_no' => preg_replace('/\D+/', '', $request->account_number),
-            'bank_id' => $this->resolveBankId($request->bank_code),
+            'account_no' => $accountNo,
+            'bank_id' => $bankId,
             'ben_fname' => $this->resolveBeneficiaryFirstName($request),
             'ben_lname' => $this->resolveBeneficiaryLastName($request),
             'ben_address' => $this->resolveBeneficiaryAddress($request),
-            'reason' => $this->resolveReason($request),
+            'reason' => $reason,
+            'otp' => $otp,
             'wallet_id' => $walletId,
+            'meta_data' => new stdClass,
             'device_information' => [
                 'device_id' => (string) data_get($request->metadata, 'device_information.device_id', 'x-change'),
                 'os_version' => (string) data_get($request->metadata, 'device_information.os_version', PHP_OS),
@@ -49,6 +81,11 @@ class ConstellationPayoutProvider implements PayoutProvider
 
         try {
             $response = $this->createCashOutNonRegistered->handle($payload);
+
+            Log::channel(config('constellation.log_channel', 'constellation'))->info(
+                '[ConstellationPayoutProvider] disburse response',
+                ['request_id' => $request->reference, 'response' => $response]
+            );
 
             $status = $this->mapDisburseResponseToStatus($response);
 

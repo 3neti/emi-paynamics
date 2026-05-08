@@ -53,4 +53,13 @@ return [
         // 'UBP' => 'bank-123',
         // 'BDO' => 'bank-456',
     ],
+
+    'otp' => [
+        'resolver' => env('CONSTELLATION_OTP_RESOLVER', 'interactive'),
+
+        'resolvers' => [
+            'interactive' => \LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver::class,
+            'null' => \LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver::class,
+        ],
+    ],
 ];
