@@ -1,6 +1,7 @@
 <?php
 
 use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationPayoutProvider;
+use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
 use LBHurtado\EmiCore\Enums\{PayoutStatus, SettlementRail};
 use LBHurtado\EmiCore\Data\PayoutRequestData;
 use Illuminate\Support\Facades\Http;
@@ -21,6 +22,14 @@ beforeEach(function () {
         'UBP' => 'UNIONBANK_ID',
         'BDO' => 'BDO_ID',
     ]);
+
+    app()->instance(ConstellationOtpResolver::class, new class implements ConstellationOtpResolver
+    {
+        public function resolve(array $otpRequestPayload): string
+        {
+            return '317537';
+        }
+    });
 });
 
 it('implements the payout provider contract', function () {
@@ -98,6 +107,7 @@ it('disburses a payout through non-registered cash-out and returns pending resul
             && $data['ben_address'] === 'Quezon City'
             && $data['reason'] === 'Voucher payout'
             && $data['amount'] === '500.00'
+            && $data['otp'] === '317537'
             && ! empty($data['signature']);
     });
 });
