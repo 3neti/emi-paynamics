@@ -1,5 +1,7 @@
 <?php
 
+use LBHurtado\EmiPaynamicsConstellation\Support\DeferredOtpResolver;
+
 return [
     'base_url' => env('CONSTELLATION_BASE_URL', 'https://asterism.payserv.net/v1'),
     'username' => env('CONSTELLATION_USERNAME'),
@@ -60,6 +62,7 @@ return [
         'resolvers' => [
             'interactive' => \LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver::class,
             'null' => \LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver::class,
+            'deferred' => DeferredOtpResolver::class,
         ],
     ],
 ];
