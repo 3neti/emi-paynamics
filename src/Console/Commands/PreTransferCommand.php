@@ -38,6 +38,18 @@ class PreTransferCommand extends Command
 
         try {
             $result = PreTransfer::run($data);
+
+            if (($result['code'] ?? null) !== 'GR005') {
+                $this->components->error('Pre-transfer failed.');
+                $this->components->twoColumnDetail('Response Code', (string) (data_get($result, 'data.response_code') ?? $result['response_code'] ?? $result['code'] ?? ''));
+                $this->components->twoColumnDetail('Response Message', (string) (data_get($result, 'data.response_message') ?? $result['response_message'] ?? $result['message'] ?? ''));
+                $this->components->twoColumnDetail('Response Advise', (string) (data_get($result, 'data.response_advise') ?? $result['response_advise'] ?? ''));
+                $this->components->twoColumnDetail('Request ID', (string) (data_get($result, 'data.request_id') ?? $result['request_id'] ?? $data['request_id']));
+                $this->logAfter($context, $result);
+
+                return self::FAILURE;
+            }
+
             $this->components->twoColumnDetail('Request ID', $result['request_id'] ?? $data['request_id']);
             $this->components->twoColumnDetail('Message', $result['message'] ?? '');
             $this->components->twoColumnDetail('Remaining Limit', $result['remaining_wallet_limit'] ?? '');

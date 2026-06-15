@@ -21,19 +21,34 @@ class PreTransfer
      */
     public function handle(array $data): array
     {
+        $requestId = (string) ($data['request_id'] ?? data_get($data, 'payload.request_id', ''));
+        $remarks = (string) ($data['remarks'] ?? data_get($data, 'payload.remarks', ''));
+
         $signature = $this->signer->generateSignature([
             $data['amount'] ?? '',
             $data['source_wallet_id'] ?? '',
             $data['destination_wallet_id'] ?? '',
-            $data['request_id'] ?? '',
-            $data['remarks'] ?? '',
+            $requestId,
+            $remarks,
         ], config('constellation.merchant_key'));
 
-        $data['signature'] = $signature;
+        $payload = [
+            'amount' => $data['amount'] ?? '',
+            'source_wallet_id' => $data['source_wallet_id'] ?? '',
+            'destination_wallet_id' => $data['destination_wallet_id'] ?? '',
+            'signature' => $signature,
+            'payload' => [
+                'request_id' => $requestId,
+                'remarks' => $remarks,
+            ],
+            'device_information' => $data['device_information'] ?? [],
+            'network_information' => $data['network_information'] ?? [],
+            'meta_data' => $data['meta_data'] ?? new \stdClass,
+        ];
 
         $response = $this->client->post(
             '/integration/corp_wallet/transfer_pre',
-            $data,
+            $payload,
         );
 
         return $response->json();
