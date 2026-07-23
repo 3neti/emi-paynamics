@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Http;
 use LBHurtado\EmiCore\Contracts\FundingProviderAdapter;
+use LBHurtado\EmiCore\Data\Funding\FundingDestinationData;
 use LBHurtado\EmiCore\Data\Funding\FundingInstructionRequestData;
 use LBHurtado\EmiCore\Data\Funding\FundingVerificationData;
 use LBHurtado\EmiCore\Data\Funding\ProviderWebhookReceiptData;
@@ -68,6 +69,41 @@ it('creates signed cash-in instructions for the configured corporate wallet', fu
         ));
 });
 
+it('creates cash-in instructions for an ownership-verified dedicated wallet', function () {
+    Http::fake([
+        '*/cashin/create' => Http::response([
+            'success' => true,
+            'data' => [
+                'request_id' => paynamicsFundingRequestId(),
+                'payment_action_info' => 'https://pay.example.com/checkout/dedicated',
+            ],
+        ]),
+    ]);
+
+    $request = paynamicsFundingInstructionRequest();
+    $request->destination = paynamicsDedicatedDestination();
+    $instructions = app(ConstellationFundingProviderAdapter::class)
+        ->createFundingInstructions($request);
+
+    expect($instructions->fundingAddress)->toBe('CNSTWLLT-DEDICATED');
+
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/cashin/create')
+        && $request['wallet_id'] === 'CNSTWLLT-DEDICATED');
+});
+
+it('blocks a reachable dedicated wallet without authoritative ownership proof', function () {
+    $request = paynamicsFundingInstructionRequest();
+    $request->destination = paynamicsDedicatedDestination('reachable');
+
+    expect(fn () => app(ConstellationFundingProviderAdapter::class)->createFundingInstructions($request))
+        ->toThrow(
+            ProviderFundingVerificationIndeterminate::class,
+            'authoritative wallet ownership verification',
+        );
+
+    Http::assertNothingSent();
+});
+
 it('authenticates and normalizes the signed Paynamics callback body', function () {
     $rawBody = json_encode(paynamicsFundingCallback(), JSON_THROW_ON_ERROR);
     $request = new ProviderWebhookRequestData(
@@ -125,6 +161,22 @@ it('maps an independently queried settled cash-in to exact minor-unit evidence',
         ->and($observation->settledAt)->not->toBeNull()
         ->and($observation->metadata['destination_verified'])->toBeTrue()
         ->and($observation->webhookReceiptId)->toBe(91);
+});
+
+it('verifies a dedicated cash-in against its snapshotted wallet', function () {
+    Http::fake([
+        '*/cashin/get_cashin_by_reqid/*' => Http::response(paynamicsCashInStatus([
+            'wallet_id' => 'CNSTWLLT-DEDICATED',
+        ])),
+    ]);
+
+    $verification = paynamicsFundingVerification();
+    $verification->destination = paynamicsDedicatedDestination();
+    $observation = app(ConstellationFundingProviderAdapter::class)
+        ->verifyFunding($verification);
+
+    expect($observation->providerAccountReference)->toBe('CNSTWLLT-DEDICATED')
+        ->and($observation->metadata['destination_verified'])->toBeTrue();
 });
 
 it('keeps independently queried pending cash-ins pending', function () {
@@ -196,6 +248,20 @@ function paynamicsFundingInstructionRequest(): FundingInstructionRequestData
 function paynamicsFundingRequestId(): string
 {
     return 'XF'.strtoupper(substr(hash('sha256', '01K10YV9H3XPG9T4K2FH09D6MW'), 0, 24));
+}
+
+function paynamicsDedicatedDestination(string $verificationStatus = 'ownership_verified'): FundingDestinationData
+{
+    return new FundingDestinationData(
+        provider: 'paynamics_constellation',
+        mode: 'dedicated',
+        destinationType: 'wallet',
+        accountReference: 'wallet:account-1001',
+        displayReference: '•••• CATED',
+        fingerprint: hash('sha256', 'paynamics|CNSTWLLT-DEDICATED'),
+        verificationStatus: $verificationStatus,
+        providerWalletId: 'CNSTWLLT-DEDICATED',
+    );
 }
 
 /**

@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use JsonException;
 use LBHurtado\EmiCore\Contracts\FundingProviderAdapter;
+use LBHurtado\EmiCore\Data\Funding\FundingDestinationData;
 use LBHurtado\EmiCore\Data\Funding\FundingInstructionRequestData;
 use LBHurtado\EmiCore\Data\Funding\FundingInstructionsData;
 use LBHurtado\EmiCore\Data\Funding\FundingVerificationData;
@@ -42,7 +43,7 @@ class ConstellationFundingProviderAdapter implements FundingProviderAdapter
     {
         $this->assertInstructionRequest($request);
 
-        $walletId = $this->fundingWalletId();
+        $walletId = $this->fundingWalletId($request->destination);
         $requestId = 'XF'.strtoupper(substr(hash('sha256', $request->fundingReference), 0, 24));
         $response = $this->createCashIn->handle([
             'request_id' => $requestId,
@@ -177,7 +178,7 @@ class ConstellationFundingProviderAdapter implements FundingProviderAdapter
         $feeAmountMinor = $this->optionalMinorAmount($data, ['fee_amount', 'fee', 'service_fee']);
         $netAmountMinor = $this->optionalMinorAmount($data, ['net_amount']) ?? ($grossAmountMinor - $feeAmountMinor);
         $walletId = $this->requiredString($data, ['wallet_id', 'destination_wallet_id']);
-        $destinationVerified = hash_equals($this->fundingWalletId(), $walletId);
+        $destinationVerified = hash_equals($this->fundingWalletId($verification->destination), $walletId);
         $settledAt = $providerStatus === 'settled'
             ? $this->dateTime($data, ['settled_at', 'completed_at', 'transaction_date', 'timestamp'])
             : null;
@@ -224,9 +225,35 @@ class ConstellationFundingProviderAdapter implements FundingProviderAdapter
         }
     }
 
-    private function fundingWalletId(): string
+    private function fundingWalletId(?FundingDestinationData $destination = null): string
     {
-        return $this->requiredConfig('wallet_id');
+        if ($destination === null) {
+            return $this->requiredConfig('wallet_id');
+        }
+
+        if (strtolower($destination->provider) !== self::PROVIDER) {
+            throw new InvalidArgumentException('Paynamics funding destination provider mismatch.');
+        }
+
+        if ($destination->destinationType !== 'wallet') {
+            throw new InvalidArgumentException('The Paynamics funding destination must be a wallet.');
+        }
+
+        if ($destination->mode === 'dedicated' && $destination->verificationStatus !== 'ownership_verified') {
+            throw new ProviderFundingVerificationIndeterminate(
+                'Paynamics dedicated funding requires authoritative wallet ownership verification.',
+            );
+        }
+
+        $walletId = trim((string) $destination->providerWalletId);
+
+        if ($walletId === '') {
+            throw new ProviderFundingVerificationIndeterminate(
+                'Paynamics funding destination has no provider wallet ID.',
+            );
+        }
+
+        return $walletId;
     }
 
     private function requiredConfig(string $key): string
