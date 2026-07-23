@@ -22,24 +22,29 @@ function buildValidPostbackPayload(string $key = 'TEST_MERCHANT_KEY'): array
     ];
 }
 
-it('stores raw payload before processing', function () {
+it('stores the raw payload as encrypted immutable evidence', function () {
     $payload = buildValidPostbackPayload();
 
     $receipt = HandleConstellationWebhook::run($payload);
 
     expect($receipt)->toBeInstanceOf(WebhookReceipt::class)
-        ->and($receipt->payload)->toBeArray()
-        ->and($receipt->payload['wallet_id'])->toBe('CNSTWLLT000001');
+        ->and(json_decode($receipt->raw_body, true, 512, JSON_THROW_ON_ERROR)['wallet_id'])
+        ->toBe('CNSTWLLT000001')
+        ->and($receipt->body_sha256)->toBe(hash('sha256', json_encode(
+            $payload,
+            JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION,
+        )));
 });
 
-it('verifies signature and marks as processed', function () {
+it('verifies the signature and leaves authenticated evidence ready for processing', function () {
     $payload = buildValidPostbackPayload();
 
     $receipt = HandleConstellationWebhook::run($payload);
 
     expect($receipt->signature_verified)->toBeTrue()
-        ->and($receipt->processing_status)->toBe('processed')
-        ->and($receipt->processed_at)->not->toBeNull();
+        ->and($receipt->authentication_status)->toBe('authenticated')
+        ->and($receipt->processing_status)->toBe('received')
+        ->and($receipt->processed_at)->toBeNull();
 });
 
 it('rejects invalid signature', function () {
@@ -49,8 +54,9 @@ it('rejects invalid signature', function () {
     $receipt = HandleConstellationWebhook::run($payload);
 
     expect($receipt->signature_verified)->toBeFalse()
-        ->and($receipt->processing_status)->toBe('signature_failed')
-        ->and($receipt->error_message)->toBe('Signature verification failed');
+        ->and($receipt->authentication_status)->toBe('rejected')
+        ->and($receipt->processing_status)->toBe('rejected')
+        ->and($receipt->error_message)->toContain('signature mismatch');
 });
 
 it('is idempotent - same postback_id returns existing receipt', function () {

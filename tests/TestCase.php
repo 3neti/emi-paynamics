@@ -28,6 +28,7 @@ abstract class TestCase extends BaseTestCase
 
     public function getEnvironmentSetUp($app): void
     {
+        config()->set('app.key', 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
         config()->set('database.default', 'testing');
         config()->set('database.connections.testing', [
             'driver' => 'sqlite',

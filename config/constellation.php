@@ -1,6 +1,8 @@
 <?php
 
 use LBHurtado\EmiPaynamicsConstellation\Support\DeferredOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver;
 
 return [
     'base_url' => env('CONSTELLATION_BASE_URL', 'https://asterism.payserv.net/v1'),
@@ -14,6 +16,18 @@ return [
     'settlement_wallet_id' => env('CONSTELLATION_SETTLEMENT_WALLET_ID'),
     'revenue_wallet_id' => env('CONSTELLATION_REVENUE_WALLET_ID'),
     'default_issuer_wallet_id' => env('CONSTELLATION_DEFAULT_ISSUER_WALLET_ID'),
+
+    'funding' => [
+        'wallet_id' => env('CONSTELLATION_FUNDING_WALLET_ID', env('CONSTELLATION_SETTLEMENT_WALLET_ID')),
+        'payment_method' => env('CONSTELLATION_FUNDING_PAYMENT_METHOD', 'onlinebanktransfer'),
+        'payment_channel' => env('CONSTELLATION_FUNDING_PAYMENT_CHANNEL', 'ubp_online'),
+        'response_url' => env('CONSTELLATION_FUNDING_RESPONSE_URL', env('CONSTELLATION_NOTIFICATION_URL')),
+        'cancel_url' => env('CONSTELLATION_FUNDING_CANCEL_URL', env('CONSTELLATION_NOTIFICATION_URL')),
+        'settled_statuses' => ['SUCCESS', 'COMPLETED', 'PAID'],
+        'pending_statuses' => ['PENDING', 'PROCESSING', 'INITIATED'],
+        'reversed_statuses' => ['REVERSED', 'REFUNDED', 'CANCELLED', 'FAILED', 'EXPIRED'],
+        'not_observed_response_codes' => [],
+    ],
 
     'settlement' => [
         'email' => env('CONSTELLATION_SETTLEMENT_EMAIL', 'admin@disburse.cash'),
@@ -60,8 +74,8 @@ return [
         'resolver' => env('CONSTELLATION_OTP_RESOLVER', 'interactive'),
 
         'resolvers' => [
-            'interactive' => \LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver::class,
-            'null' => \LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver::class,
+            'interactive' => InteractiveOtpResolver::class,
+            'null' => NullOtpResolver::class,
             'deferred' => DeferredOtpResolver::class,
         ],
     ],

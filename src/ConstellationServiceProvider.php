@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use LBHurtado\EmiCore\Contracts\SignsProviderPayloads;
 use LBHurtado\EmiCore\Contracts\SystemReadiness;
 use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
+use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationFundingProviderAdapter;
 use LBHurtado\EmiPaynamicsConstellation\Console\Commands as Cmd;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
@@ -27,6 +28,8 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->bind(SignsProviderPayloads::class, ConstellationSigner::class);
         $this->app->bind(VerifiesProviderPostbacks::class, ConstellationSignatureVerifier::class);
         $this->app->bind(SystemReadiness::class, ConstellationSystemReadiness::class);
+        $this->app->singleton(ConstellationFundingProviderAdapter::class);
+        $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
 
         $this->app->bind(ConstellationOtpResolver::class, function ($app) {
             $driver = config('constellation.otp.resolver', 'interactive');
