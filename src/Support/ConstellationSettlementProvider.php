@@ -33,6 +33,7 @@ final readonly class ConstellationSettlementProvider implements ProviderReadines
             label: 'Paynamics Constellation',
             capabilities: [
                 ProviderCapability::ReadinessProbe,
+                ProviderCapability::BalanceRead,
                 ProviderCapability::FundingEvidenceRead,
                 ProviderCapability::FundingInstructionIssue,
             ],
@@ -98,11 +99,18 @@ final readonly class ConstellationSettlementProvider implements ProviderReadines
         ];
 
         if (in_array($capability, [
+            ProviderCapability::BalanceRead,
+            ProviderCapability::FundingEvidenceRead,
+            ProviderCapability::FundingInstructionIssue,
+        ], true)) {
+            $keys[] = 'funding.wallet_id';
+        }
+
+        if (in_array($capability, [
             ProviderCapability::FundingEvidenceRead,
             ProviderCapability::FundingInstructionIssue,
         ], true)) {
             $keys[] = 'merchant_key';
-            $keys[] = 'funding.wallet_id';
         }
 
         if ($capability === ProviderCapability::FundingInstructionIssue) {

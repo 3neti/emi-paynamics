@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use LBHurtado\EmiCore\Contracts\FundingInstructionIssuer;
+use LBHurtado\EmiCore\Contracts\ProviderBalanceReader;
 use LBHurtado\EmiCore\Contracts\ProviderFundingEvidenceVerifier;
 use LBHurtado\EmiCore\Contracts\SettlementProviderRegistryContract;
 use LBHurtado\EmiCore\Data\Providers\ProviderReadinessRequestData;
 use LBHurtado\EmiCore\Data\SystemReadinessResult;
 use LBHurtado\EmiCore\Enums\ProviderCapability;
 use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationFundingProviderAdapter;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSettlementProvider;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSystemReadiness;
 
@@ -19,12 +21,15 @@ it('advertises only the provider-neutral capabilities implemented by Paynamics',
     expect($manifest->label)->toBe('Paynamics Constellation')
         ->and($manifest->capabilities)->toBe([
             ProviderCapability::ReadinessProbe,
+            ProviderCapability::BalanceRead,
             ProviderCapability::FundingEvidenceRead,
             ProviderCapability::FundingInstructionIssue,
         ])
         ->and(app(ConstellationFundingProviderAdapter::class))
         ->toBeInstanceOf(FundingInstructionIssuer::class)
-        ->toBeInstanceOf(ProviderFundingEvidenceVerifier::class);
+        ->toBeInstanceOf(ProviderFundingEvidenceVerifier::class)
+        ->and(app(ConstellationProviderBalanceReader::class))
+        ->toBeInstanceOf(ProviderBalanceReader::class);
 });
 
 it('reports missing capability configuration without calling or leaking provider state', function () {

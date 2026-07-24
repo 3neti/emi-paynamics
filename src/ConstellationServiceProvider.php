@@ -10,6 +10,7 @@ use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
 use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationFundingProviderAdapter;
 use LBHurtado\EmiPaynamicsConstellation\Console\Commands as Cmd;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSettlementProvider;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
@@ -35,6 +36,11 @@ class ConstellationServiceProvider extends ServiceProvider
             'emi.settlement-providers',
             'emi.provider-readiness-probes',
         ]);
+        $this->app->singleton(ConstellationProviderBalanceReader::class);
+        $this->app->tag(
+            ConstellationProviderBalanceReader::class,
+            'emi.provider-balance-readers',
+        );
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
 
