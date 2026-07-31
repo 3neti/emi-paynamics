@@ -43,7 +43,7 @@ trait LogResponse
         return [
             'method' => $method,
             'endpoint' => $endpoint,
-            'url' => rtrim((string) config('constellation.base_url'), '/') . $endpoint,
+            'url' => rtrim((string) config('constellation.base_url'), '/').$endpoint,
             'status' => $response->status(),
             'reason' => $response->reason(),
             'success' => is_array($json) ? data_get($json, 'success') : null,

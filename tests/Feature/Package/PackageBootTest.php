@@ -4,8 +4,8 @@ use LBHurtado\EmiCore\Contracts\SignsProviderPayloads;
 use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
 use LBHurtado\EmiPaynamicsConstellation\ConstellationServiceProvider;
 use LBHurtado\EmiPaynamicsConstellation\Http\ConstellationClient;
-use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 
 it('boots the constellation service provider', function () {
     expect(app()->getProviders(ConstellationServiceProvider::class))

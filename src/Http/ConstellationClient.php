@@ -2,10 +2,10 @@
 
 namespace LBHurtado\EmiPaynamicsConstellation\Http;
 
-use LBHurtado\EmiPaynamicsConstellation\Traits\LogResponse;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use LBHurtado\EmiPaynamicsConstellation\Traits\LogResponse;
 
 class ConstellationClient
 {
@@ -29,10 +29,10 @@ class ConstellationClient
         return $this->handleResponse('GET', $endpoint, [], $response);
     }
 
-//    public function get(string $endpoint): Response
-//    {
-//        return $this->baseRequest()->get($endpoint);
-//    }
+    //    public function get(string $endpoint): Response
+    //    {
+    //        return $this->baseRequest()->get($endpoint);
+    //    }
 
     /**
      * @param  array<string, mixed>  $data
@@ -62,6 +62,4 @@ class ConstellationClient
     {
         return $this->baseRequest()->delete($endpoint);
     }
-
-
 }

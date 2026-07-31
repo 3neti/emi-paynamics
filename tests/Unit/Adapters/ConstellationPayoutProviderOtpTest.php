@@ -45,8 +45,7 @@ it('resolves OTP before submitting Paynamics non-registered cash-out', function 
 
     $otpResolver->shouldReceive('resolve')
         ->once()
-        ->with(Mockery::on(fn (array $payload): bool =>
-            $payload['account_id'] === 'CNSTMRCHWPIG61'
+        ->with(Mockery::on(fn (array $payload): bool => $payload['account_id'] === 'CNSTMRCHWPIG61'
             && $payload['bank_account_no'] === '09173011987'
             && $payload['bank_id'] === 'GXI'
             && $payload['request_id'] === 'TEST-Z3EL-09173011987-S1'
@@ -57,8 +56,7 @@ it('resolves OTP before submitting Paynamics non-registered cash-out', function 
 
     $cashOut->shouldReceive('handle')
         ->once()
-        ->with(Mockery::on(fn (array $payload): bool =>
-            $payload['account_id'] === 'CNSTMRCHWPIG61'
+        ->with(Mockery::on(fn (array $payload): bool => $payload['account_id'] === 'CNSTMRCHWPIG61'
             && $payload['amount'] === '75.00'
             && $payload['request_id'] === 'TEST-Z3EL-09173011987-S1'
             && $payload['account_no'] === '09173011987'

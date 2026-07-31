@@ -1,10 +1,11 @@
 <?php
 
+use Illuminate\Support\Facades\Http;
+use LBHurtado\EmiCore\Data\PayoutRequestData;
+use LBHurtado\EmiCore\Enums\PayoutStatus;
+use LBHurtado\EmiCore\Enums\SettlementRail;
 use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationPayoutProvider;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
-use LBHurtado\EmiCore\Enums\{PayoutStatus, SettlementRail};
-use LBHurtado\EmiCore\Data\PayoutRequestData;
-use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     config()->set('constellation.settlement_wallet_id', 'CNSTWLLT_SETTLEMENT_001');
@@ -155,18 +156,18 @@ it('falls back to configured company values when beneficiary metadata is absent'
 });
 
 it('returns failed result when disburse throws an exception', function () {
-//    Http::fake([
-//        '*/integration/corp_wallet/view_wallet/*' => Http::response([
-//            'success' => true,
-//            'data' => [
-//                'wallet_id' => 'CNSTWLLT_SETTLEMENT_001',
-//                'account_id' => 'CNSTACC_SETTLEMENT_001',
-//            ],
-//        ]),
-//        '*/integration/corp_wallet/withdraw_not_registered' => Http::response([
-//            'message' => 'Provider error',
-//        ], 500),
-//    ]);
+    //    Http::fake([
+    //        '*/integration/corp_wallet/view_wallet/*' => Http::response([
+    //            'success' => true,
+    //            'data' => [
+    //                'wallet_id' => 'CNSTWLLT_SETTLEMENT_001',
+    //                'account_id' => 'CNSTACC_SETTLEMENT_001',
+    //            ],
+    //        ]),
+    //        '*/integration/corp_wallet/withdraw_not_registered' => Http::response([
+    //            'message' => 'Provider error',
+    //        ], 500),
+    //    ]);
     Http::fake([
         '*/integration/corp_wallet/view_wallet/*' => Http::response([
             'success' => true,
