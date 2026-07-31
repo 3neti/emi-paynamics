@@ -2,18 +2,6 @@
     "name": "3neti/emi-paynamics",
     "description": "Paynamics Constellation adapter for EMI core",
     "type": "library",
-    "repositories": [
-        {
-            "type": "path",
-            "url": "/Users/rli/PhpstormProjects/packages/emi-core",
-            "options": {
-                "symlink": true,
-                "versions": {
-                    "3neti/emi-core": "1.0.5"
-                }
-            }
-        }
-    ],
     "license": "proprietary",
     "authors": [
         {
@@ -41,18 +29,21 @@
     },
     "require": {
         "php": "^8.3",
-        "3neti/emi-core": "^v1.0.1",
+        "3neti/emi-core": "^2.0@beta",
         "illuminate/support": "^12.0 || ^13.0",
         "illuminate/http": "^12.0 || ^13.0",
         "lorisleiva/laravel-actions": "^2.9",
         "spatie/laravel-data": "^4.0"
     },
     "require-dev": {
+        "laravel/pint": "^1.18",
         "orchestra/testbench": "^10.0 || ^11.0",
         "pestphp/pest": "^4.0"
     },
     "scripts": {
-        "test": "vendor/bin/pest"
+        "format": "pint",
+        "format:check": "pint --test",
+        "test": "pest --compact"
     },
     "config": {
         "allow-plugins": {
