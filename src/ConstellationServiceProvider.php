@@ -4,10 +4,13 @@ namespace LBHurtado\EmiPaynamicsConstellation;
 
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
+use LBHurtado\EmiCore\Contracts\DeploymentConnectionContributor;
+use LBHurtado\EmiCore\Contracts\DeploymentEnvironmentContributor;
 use LBHurtado\EmiCore\Contracts\SignsProviderPayloads;
 use LBHurtado\EmiCore\Contracts\SystemReadiness;
 use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
 use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationFundingProviderAdapter;
+use LBHurtado\EmiPaynamicsConstellation\Configuration\PaynamicsDeploymentContributor;
 use LBHurtado\EmiPaynamicsConstellation\Console\Commands as Cmd;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
@@ -26,6 +29,12 @@ class ConstellationServiceProvider extends ServiceProvider
             __DIR__.'/../config/constellation.php',
             'constellation'
         );
+
+        $this->app->singleton(PaynamicsDeploymentContributor::class);
+        $this->app->tag(PaynamicsDeploymentContributor::class, [
+            DeploymentEnvironmentContributor::class,
+            DeploymentConnectionContributor::class,
+        ]);
 
         $this->app->bind(SignsProviderPayloads::class, ConstellationSigner::class);
         $this->app->bind(VerifiesProviderPostbacks::class, ConstellationSignatureVerifier::class);
