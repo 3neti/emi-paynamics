@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace LBHurtado\EmiPaynamicsConstellation\Contracts;
 
-interface PendingOtpStore
+use LBHurtado\EmiCore\Contracts\PendingPayoutOtpStore;
+
+interface PendingOtpStore extends PendingPayoutOtpStore
 {
     /**
      * @param  array<string, mixed>  $otpRequestPayload

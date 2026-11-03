@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use LBHurtado\EmiCore\Contracts\DeploymentConnectionContributor;
 use LBHurtado\EmiCore\Contracts\DeploymentEnvironmentContributor;
+use LBHurtado\EmiCore\Contracts\PendingPayoutOtpStore;
 use LBHurtado\EmiCore\Contracts\SignsProviderPayloads;
 use LBHurtado\EmiCore\Contracts\SystemReadiness;
 use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
@@ -13,6 +14,9 @@ use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationFundingProviderAda
 use LBHurtado\EmiPaynamicsConstellation\Configuration\PaynamicsDeploymentContributor;
 use LBHurtado\EmiPaynamicsConstellation\Console\Commands as Cmd;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Contracts\PendingOtpStore;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationCustomerProvisioner;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationDeferredApprovalScope;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSettlementProvider;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
@@ -53,6 +57,11 @@ class ConstellationServiceProvider extends ServiceProvider
         );
         $this->app->singleton(ConstellationWalletBalanceReader::class);
         $this->app->tag(ConstellationWalletBalanceReader::class, 'emi.provider-wallet-balance-readers');
+        $this->app->singleton(ConstellationCustomerProvisioner::class);
+        $this->app->tag(ConstellationCustomerProvisioner::class, 'emi.provider-customer-provisioners');
+        $this->app->singleton(ConstellationDeferredApprovalScope::class);
+        $this->app->tag(ConstellationDeferredApprovalScope::class, 'emi.deferred-payout-approval-scopes');
+        $this->app->bindIf(PendingPayoutOtpStore::class, fn ($app) => $app->make(PendingOtpStore::class));
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
 
