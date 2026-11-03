@@ -18,6 +18,7 @@ use LBHurtado\EmiPaynamicsConstellation\Contracts\PendingOtpStore;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationCustomerProvisioner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationDeferredApprovalScope;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProvisioningGateway;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSettlementProvider;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
@@ -61,6 +62,8 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->tag(ConstellationCustomerProvisioner::class, 'emi.provider-customer-provisioners');
         $this->app->singleton(ConstellationDeferredApprovalScope::class);
         $this->app->tag(ConstellationDeferredApprovalScope::class, 'emi.deferred-payout-approval-scopes');
+        $this->app->singleton(ConstellationProvisioningGateway::class);
+        $this->app->tag(ConstellationProvisioningGateway::class, 'emi.provider-provisioning-gateways');
         $this->app->bindIf(PendingPayoutOtpStore::class, fn ($app) => $app->make(PendingOtpStore::class));
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
