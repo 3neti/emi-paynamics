@@ -22,6 +22,11 @@ class ConstellationWalletProjectionSynchronizer implements ProviderWalletProject
         return ProviderCode::PaynamicsConstellation->value;
     }
 
+    public function supportsProvider(string $provider): bool
+    {
+        return in_array(strtolower(trim($provider)), ['paynamics', 'paynamics_constellation'], true);
+    }
+
     /**
      * @return array{wallet: EmiWallet, response: array<string, mixed>, balance_minor: int, balance: float, currency: string}
      */
