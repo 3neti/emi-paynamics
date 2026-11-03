@@ -25,7 +25,9 @@ use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSystemReadiness;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationWalletBalanceReader;
 use LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Support\LegacyPendingOtpStoreAdapter;
 use LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver;
+use RuntimeException;
 
 class ConstellationServiceProvider extends ServiceProvider
 {
@@ -64,7 +66,16 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->tag(ConstellationDeferredApprovalScope::class, 'emi.deferred-payout-approval-scopes');
         $this->app->singleton(ConstellationProvisioningGateway::class);
         $this->app->tag(ConstellationProvisioningGateway::class, 'emi.provider-provisioning-gateways');
-        $this->app->bindIf(PendingPayoutOtpStore::class, fn ($app) => $app->make(PendingOtpStore::class));
+        $legacyFallback = fn ($app) => $app->make(PendingOtpStore::class);
+        $this->app->bindIf(PendingPayoutOtpStore::class, $legacyFallback);
+        $this->app->bindIf(PendingOtpStore::class, function ($app) use ($legacyFallback) {
+            if (! $app->resolved(PendingPayoutOtpStore::class)
+                && ($app->getBindings()[PendingPayoutOtpStore::class]['concrete'] ?? null) === $legacyFallback) {
+                throw new RuntimeException('A pending payout OTP store must be configured.');
+            }
+
+            return new LegacyPendingOtpStoreAdapter($app->make(PendingPayoutOtpStore::class));
+        });
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-destination-resolvers');
