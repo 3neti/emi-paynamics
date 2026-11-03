@@ -18,6 +18,7 @@ use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSettlementProvider;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSystemReadiness;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationWalletBalanceReader;
 use LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver;
 use LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver;
 
@@ -50,6 +51,8 @@ class ConstellationServiceProvider extends ServiceProvider
             ConstellationProviderBalanceReader::class,
             'emi.provider-balance-readers',
         );
+        $this->app->singleton(ConstellationWalletBalanceReader::class);
+        $this->app->tag(ConstellationWalletBalanceReader::class, 'emi.provider-wallet-balance-readers');
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
 
