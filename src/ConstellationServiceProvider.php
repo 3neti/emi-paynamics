@@ -67,6 +67,7 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->bindIf(PendingPayoutOtpStore::class, fn ($app) => $app->make(PendingOtpStore::class));
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
+        $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-destination-resolvers');
 
         $this->app->bind(ConstellationOtpResolver::class, function ($app) {
             $driver = config('constellation.otp.resolver', 'interactive');

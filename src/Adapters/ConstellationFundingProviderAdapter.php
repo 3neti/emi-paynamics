@@ -8,15 +8,18 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use JsonException;
 use LBHurtado\EmiCore\Contracts\FundingProviderAdapter;
+use LBHurtado\EmiCore\Contracts\ProviderFundingDestinationResolver;
 use LBHurtado\EmiCore\Data\Funding\FundingDestinationData;
 use LBHurtado\EmiCore\Data\Funding\FundingInstructionRequestData;
 use LBHurtado\EmiCore\Data\Funding\FundingInstructionsData;
 use LBHurtado\EmiCore\Data\Funding\FundingVerificationData;
 use LBHurtado\EmiCore\Data\Funding\ProviderEventHintData;
+use LBHurtado\EmiCore\Data\Funding\ProviderFundingDestinationLinkData;
 use LBHurtado\EmiCore\Data\Funding\ProviderFundingObservationData;
 use LBHurtado\EmiCore\Data\Funding\ProviderWebhookReceiptData;
 use LBHurtado\EmiCore\Data\Funding\ProviderWebhookRequestData;
 use LBHurtado\EmiCore\Data\Funding\WebhookAuthenticationData;
+use LBHurtado\EmiCore\Exceptions\ProviderFundingDestinationUnavailable;
 use LBHurtado\EmiCore\Exceptions\ProviderFundingNotObserved;
 use LBHurtado\EmiCore\Exceptions\ProviderFundingVerificationIndeterminate;
 use LBHurtado\EmiPaynamicsConstellation\Actions\CashIn\CreateCashIn;
@@ -24,7 +27,7 @@ use LBHurtado\EmiPaynamicsConstellation\Actions\CashIn\GetCashInByRequestId;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use Throwable;
 
-class ConstellationFundingProviderAdapter implements FundingProviderAdapter
+class ConstellationFundingProviderAdapter implements FundingProviderAdapter, ProviderFundingDestinationResolver
 {
     private const PROVIDER = 'paynamics_constellation';
 
@@ -37,6 +40,39 @@ class ConstellationFundingProviderAdapter implements FundingProviderAdapter
     public function providerCode(): string
     {
         return self::PROVIDER;
+    }
+
+    public function sharedFundingDestination(string $accountReference): FundingDestinationData
+    {
+        $wallet = config('constellation.funding.wallet_id');
+        if (! is_string($wallet) || trim($wallet) === '') {
+            throw new ProviderFundingDestinationUnavailable('Shared funding destination wallet is unavailable.');
+        }
+        $wallet = trim($wallet);
+
+        return new FundingDestinationData(
+            provider: self::PROVIDER, mode: 'shared', destinationType: 'wallet', accountReference: $accountReference,
+            displayReference: '•••• '.mb_substr($wallet, -6), fingerprint: hash('sha256', self::PROVIDER.'|'.$wallet),
+            verificationStatus: 'platform_configured', providerWalletId: $wallet,
+        );
+    }
+
+    public function dedicatedFundingDestination(ProviderFundingDestinationLinkData $link, string $accountReference): FundingDestinationData
+    {
+        if ($link->verificationStatus !== 'ownership_verified') {
+            throw new ProviderFundingDestinationUnavailable('Paynamics dedicated funding requires authoritative wallet ownership verification.');
+        }
+        $wallet = trim((string) $link->providerWalletId);
+        if ($wallet === '') {
+            throw new ProviderFundingDestinationUnavailable('The dedicated Paynamics destination has no wallet ID.');
+        }
+
+        return new FundingDestinationData(
+            provider: self::PROVIDER, mode: 'dedicated', destinationType: 'wallet', accountReference: $accountReference,
+            displayReference: $link->displayReference ?? '•••• '.mb_substr($wallet, -6),
+            fingerprint: $link->fingerprint ?? hash('sha256', self::PROVIDER.'|'.$wallet),
+            verificationStatus: 'ownership_verified', providerAccountId: $link->providerAccountId, providerWalletId: $wallet,
+        );
     }
 
     public function createFundingInstructions(FundingInstructionRequestData $request): FundingInstructionsData
