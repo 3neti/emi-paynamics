@@ -6,12 +6,22 @@ namespace LBHurtado\EmiPaynamicsConstellation\Configuration;
 
 use LBHurtado\EmiCore\Contracts\DeploymentConnectionContributor;
 use LBHurtado\EmiCore\Contracts\DeploymentEnvironmentContributor;
+use LBHurtado\EmiCore\Contracts\ProviderCommissioningFingerprintInputs;
 use LBHurtado\EmiCore\Data\Configuration\EnvironmentVariableData;
 use LBHurtado\EmiCore\Data\Configuration\ProviderConnectionTemplateData;
 use LBHurtado\EmiCore\Enums\ProviderCapability;
 
-final class PaynamicsDeploymentContributor implements DeploymentConnectionContributor, DeploymentEnvironmentContributor
+final class PaynamicsDeploymentContributor implements DeploymentConnectionContributor, DeploymentEnvironmentContributor, ProviderCommissioningFingerprintInputs
 {
+    public function settlementAccountFingerprintInputs(): array
+    {
+        return [
+            'settlement_wallet_id' => config('constellation.settlement_wallet_id'),
+            'revenue_wallet_id' => config('constellation.revenue_wallet_id'),
+            'funding_wallet_id' => config('constellation.funding.wallet_id'),
+        ];
+    }
+
     public function providerCode(): string
     {
         return 'paynamics_constellation';

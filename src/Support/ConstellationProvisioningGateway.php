@@ -7,6 +7,7 @@ namespace LBHurtado\EmiPaynamicsConstellation\Support;
 use BackedEnum;
 use Illuminate\Support\Str;
 use LBHurtado\EmiCore\Contracts\ProviderCustomerProvisioner;
+use LBHurtado\EmiCore\Contracts\ProviderDefaultProvisioningMode;
 use LBHurtado\EmiCore\Contracts\ProviderProvisioningGateway;
 use LBHurtado\EmiCore\Enums\ComplianceLevel;
 use LBHurtado\EmiCore\Enums\ProviderCode;
@@ -18,8 +19,13 @@ use LBHurtado\EmiCore\Models\ProviderAccount;
 use LBHurtado\EmiCore\Models\Wallet;
 use RuntimeException;
 
-class ConstellationProvisioningGateway implements ProviderProvisioningGateway
+class ConstellationProvisioningGateway implements ProviderDefaultProvisioningMode, ProviderProvisioningGateway
 {
+    public function defaultProvisioningMode(): string
+    {
+        return 'wallet_create';
+    }
+
     public function providerCode(): string
     {
         return 'paynamics';
