@@ -24,6 +24,7 @@ use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSystemReadiness;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationWalletBalanceReader;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationWalletProjectionSynchronizer;
 use LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver;
 use LBHurtado\EmiPaynamicsConstellation\Support\LegacyPendingOtpStoreAdapter;
 use LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver;
@@ -60,6 +61,8 @@ class ConstellationServiceProvider extends ServiceProvider
         );
         $this->app->singleton(ConstellationWalletBalanceReader::class);
         $this->app->tag(ConstellationWalletBalanceReader::class, 'emi.provider-wallet-balance-readers');
+        $this->app->singleton(ConstellationWalletProjectionSynchronizer::class);
+        $this->app->tag(ConstellationWalletProjectionSynchronizer::class, 'emi.provider-wallet-projection-synchronizers');
         $this->app->singleton(ConstellationCustomerProvisioner::class);
         $this->app->tag(ConstellationCustomerProvisioner::class, 'emi.provider-customer-provisioners');
         $this->app->singleton(ConstellationDeferredApprovalScope::class);
