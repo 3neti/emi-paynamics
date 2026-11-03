@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use LBHurtado\EmiCore\Contracts\ProviderCustomerProvisioner;
 use LBHurtado\EmiCore\Contracts\ProviderDefaultProvisioningMode;
 use LBHurtado\EmiCore\Contracts\ProviderProvisioningGateway;
+use LBHurtado\EmiCore\Contracts\ProviderProvisioningPresentation;
 use LBHurtado\EmiCore\Enums\ComplianceLevel;
 use LBHurtado\EmiCore\Enums\ProviderCode;
 use LBHurtado\EmiCore\Enums\VerificationStatus;
@@ -19,8 +20,34 @@ use LBHurtado\EmiCore\Models\ProviderAccount;
 use LBHurtado\EmiCore\Models\Wallet;
 use RuntimeException;
 
-class ConstellationProvisioningGateway implements ProviderDefaultProvisioningMode, ProviderProvisioningGateway
+class ConstellationProvisioningGateway implements ProviderDefaultProvisioningMode, ProviderProvisioningGateway, ProviderProvisioningPresentation
 {
+    public function defaultProvisioningTopology(): string
+    {
+        return 'provider_customer_wallet';
+    }
+
+    public function provisioningPresentation(string $mode): ?array
+    {
+        return match ($mode) {
+            'wallet_create', 'wallet_resolve' => [
+                'title' => 'Create your Paynamics wallet',
+                'description' => 'Complete wallet setup so Pay Codes can be issued and paid out.',
+                'steps' => ['profile', 'wallet', 'kyc', 'ready'],
+                'fields' => ['mobile', 'name', 'email', 'address', 'source_of_funds'],
+                'actions' => ['continue', 'open_capture_link'],
+            ],
+            'bank_account_link' => [
+                'title' => 'Add your payout bank account',
+                'description' => 'Bind a bank account to your Paynamics wallet for payouts.',
+                'steps' => ['bank_account', 'consent', 'provider_bind', 'ready'],
+                'fields' => ['bank_code', 'account_number', 'account_name', 'consent'],
+                'actions' => ['continue'],
+            ],
+            default => null,
+        };
+    }
+
     public function defaultProvisioningMode(): string
     {
         return 'wallet_create';
