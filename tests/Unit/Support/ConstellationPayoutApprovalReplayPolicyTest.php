@@ -24,3 +24,15 @@ it('does not load voucher metadata for an already-redeemed exception', function 
         new RuntimeException('Voucher has already been redeemed'),
     ))->toBeTrue();
 });
+
+it('recognizes deferred pending approval without presenting an unfinished payout as complete', function (): void {
+    $policy = app(ConstellationPayoutApprovalReplayPolicy::class);
+    $metadata = fn (): array => [];
+
+    expect($policy->isDeferredApprovalPending([
+        'claim_type' => 'redeem', 'status' => 'redeemed', 'messages' => [], 'disbursement' => null,
+    ], $metadata))->toBeTrue()
+        ->and($policy->isDeferredApprovalPending([
+            'claim_type' => 'redeem', 'status' => 'redeemed', 'messages' => [], 'disbursement' => ['status' => 'completed'],
+        ], $metadata))->toBeFalse();
+});
