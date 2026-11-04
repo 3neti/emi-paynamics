@@ -17,6 +17,7 @@ use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\PendingOtpStore;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationCustomerProvisioner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationDeferredApprovalScope;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationPayoutApprovalReplayPolicy;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationPendingPayoutOtpInterpreter;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProvisioningGateway;
@@ -66,6 +67,8 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->tag(ConstellationWalletProjectionSynchronizer::class, 'emi.provider-wallet-projection-synchronizers');
         $this->app->singleton(ConstellationPendingPayoutOtpInterpreter::class);
         $this->app->tag(ConstellationPendingPayoutOtpInterpreter::class, 'emi.pending-payout-otp-interpreters');
+        $this->app->singleton(ConstellationPayoutApprovalReplayPolicy::class);
+        $this->app->tag(ConstellationPayoutApprovalReplayPolicy::class, 'emi.payout-approval-replay-policies');
         $this->app->singleton(ConstellationCustomerProvisioner::class);
         $this->app->tag(ConstellationCustomerProvisioner::class, 'emi.provider-customer-provisioners');
         $this->app->singleton(ConstellationDeferredApprovalScope::class);
