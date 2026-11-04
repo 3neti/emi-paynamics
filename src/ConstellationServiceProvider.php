@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use LBHurtado\EmiCore\Contracts\DeploymentConnectionContributor;
 use LBHurtado\EmiCore\Contracts\DeploymentEnvironmentContributor;
+use LBHurtado\EmiCore\Contracts\PendingPayoutOtpStore;
 use LBHurtado\EmiCore\Contracts\SignsProviderPayloads;
 use LBHurtado\EmiCore\Contracts\SystemReadiness;
 use LBHurtado\EmiCore\Contracts\VerifiesProviderPostbacks;
@@ -13,13 +14,23 @@ use LBHurtado\EmiPaynamicsConstellation\Adapters\ConstellationFundingProviderAda
 use LBHurtado\EmiPaynamicsConstellation\Configuration\PaynamicsDeploymentContributor;
 use LBHurtado\EmiPaynamicsConstellation\Console\Commands as Cmd;
 use LBHurtado\EmiPaynamicsConstellation\Contracts\ConstellationOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Contracts\PendingOtpStore;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationCustomerProvisioner;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationDeferredApprovalScope;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationPayoutApprovalReplayPolicy;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationPendingPayoutOtpInterpreter;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProviderBalanceReader;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationProvisioningGateway;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSettlementProvider;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSignatureVerifier;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSigner;
 use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationSystemReadiness;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationWalletBalanceReader;
+use LBHurtado\EmiPaynamicsConstellation\Support\ConstellationWalletProjectionSynchronizer;
 use LBHurtado\EmiPaynamicsConstellation\Support\InteractiveOtpResolver;
+use LBHurtado\EmiPaynamicsConstellation\Support\LegacyPendingOtpStoreAdapter;
 use LBHurtado\EmiPaynamicsConstellation\Support\NullOtpResolver;
+use RuntimeException;
 
 class ConstellationServiceProvider extends ServiceProvider
 {
@@ -50,8 +61,33 @@ class ConstellationServiceProvider extends ServiceProvider
             ConstellationProviderBalanceReader::class,
             'emi.provider-balance-readers',
         );
+        $this->app->singleton(ConstellationWalletBalanceReader::class);
+        $this->app->tag(ConstellationWalletBalanceReader::class, 'emi.provider-wallet-balance-readers');
+        $this->app->singleton(ConstellationWalletProjectionSynchronizer::class);
+        $this->app->tag(ConstellationWalletProjectionSynchronizer::class, 'emi.provider-wallet-projection-synchronizers');
+        $this->app->singleton(ConstellationPendingPayoutOtpInterpreter::class);
+        $this->app->tag(ConstellationPendingPayoutOtpInterpreter::class, 'emi.pending-payout-otp-interpreters');
+        $this->app->singleton(ConstellationPayoutApprovalReplayPolicy::class);
+        $this->app->tag(ConstellationPayoutApprovalReplayPolicy::class, 'emi.payout-approval-replay-policies');
+        $this->app->singleton(ConstellationCustomerProvisioner::class);
+        $this->app->tag(ConstellationCustomerProvisioner::class, 'emi.provider-customer-provisioners');
+        $this->app->singleton(ConstellationDeferredApprovalScope::class);
+        $this->app->tag(ConstellationDeferredApprovalScope::class, 'emi.deferred-payout-approval-scopes');
+        $this->app->singleton(ConstellationProvisioningGateway::class);
+        $this->app->tag(ConstellationProvisioningGateway::class, 'emi.provider-provisioning-gateways');
+        $legacyFallback = fn ($app) => $app->make(PendingOtpStore::class);
+        $this->app->bindIf(PendingPayoutOtpStore::class, $legacyFallback);
+        $this->app->bindIf(PendingOtpStore::class, function ($app) use ($legacyFallback) {
+            if (! $app->resolved(PendingPayoutOtpStore::class)
+                && ($app->getBindings()[PendingPayoutOtpStore::class]['concrete'] ?? null) === $legacyFallback) {
+                throw new RuntimeException('A pending payout OTP store must be configured.');
+            }
+
+            return new LegacyPendingOtpStoreAdapter($app->make(PendingPayoutOtpStore::class));
+        });
         $this->app->singleton(ConstellationFundingProviderAdapter::class);
         $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-provider-adapters');
+        $this->app->tag(ConstellationFundingProviderAdapter::class, 'emi.funding-destination-resolvers');
 
         $this->app->bind(ConstellationOtpResolver::class, function ($app) {
             $driver = config('constellation.otp.resolver', 'interactive');

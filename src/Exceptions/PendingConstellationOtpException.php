@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace LBHurtado\EmiPaynamicsConstellation\Exceptions;
 
+use LBHurtado\EmiCore\Contracts\PendingPayoutApproval;
 use RuntimeException;
 
-final class PendingConstellationOtpException extends RuntimeException
+final class PendingConstellationOtpException extends RuntimeException implements PendingPayoutApproval
 {
     /**
      * @param  array<string, mixed>  $otpRequestPayload
