@@ -55,6 +55,7 @@ class ConstellationServiceProvider extends ServiceProvider
         $this->app->tag(ConstellationSettlementProvider::class, [
             'emi.settlement-providers',
             'emi.provider-readiness-probes',
+            'emi.payout-provider-identities',
         ]);
         $this->app->singleton(ConstellationProviderBalanceReader::class);
         $this->app->tag(
