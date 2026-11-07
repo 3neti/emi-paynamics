@@ -6,6 +6,7 @@ namespace LBHurtado\EmiPaynamicsConstellation\Support;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use LBHurtado\EmiCore\Contracts\PayoutProviderIdentity;
 use LBHurtado\EmiCore\Contracts\ProviderReadinessProbe;
 use LBHurtado\EmiCore\Contracts\SettlementProvider;
 use LBHurtado\EmiCore\Data\Providers\ProviderCapabilityManifestData;
@@ -13,7 +14,7 @@ use LBHurtado\EmiCore\Data\Providers\ProviderCapabilityReadinessData;
 use LBHurtado\EmiCore\Data\Providers\ProviderReadinessRequestData;
 use LBHurtado\EmiCore\Enums\ProviderCapability;
 
-final readonly class ConstellationSettlementProvider implements ProviderReadinessProbe, SettlementProvider
+final readonly class ConstellationSettlementProvider implements PayoutProviderIdentity, ProviderReadinessProbe, SettlementProvider
 {
     private const Provider = 'paynamics_constellation';
 
@@ -24,6 +25,11 @@ final readonly class ConstellationSettlementProvider implements ProviderReadines
     public function providerCode(): string
     {
         return self::Provider;
+    }
+
+    public function acceptsPayoutProvider(string $provider): bool
+    {
+        return in_array(strtolower(trim($provider)), ['paynamics', self::Provider], true);
     }
 
     public function manifest(): ProviderCapabilityManifestData
